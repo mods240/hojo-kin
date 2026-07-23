@@ -60,20 +60,26 @@ ${COMPANY_PROFILE}
 上限額: ${subsidy.max_limit || "不明"}
 締切: ${subsidy.acceptance_end_datetime || "不明"}
 
-以下のJSON形式のみで出力してください。前置き・説明文・Markdownのコードブロック記号は一切不要です。
+まず、この補助金(または同種の制度)の申請方法を解説している実在の記事とYouTube動画を、
+Web検索を使って実際に探してください。見つかったものだけを使い、存在しないURLを作らないでください。
+公的機関(中小企業庁、ミラサポplus、jGrants公式、都道府県の産業振興財団等)や、
+信頼できる専門家・士業事務所による解説を優先してください。
+
+検索が終わったら、以下のJSON形式のみで出力してください。前置き・説明文・Markdownのコードブロック記号は一切不要です。
 
 {
   "overview": "この補助金がどういう制度か、2〜3文の要約",
   "steps": ["申請の大まかな流れを順番に、5〜8ステップ程度。各項目は40文字程度"],
   "documents": ["準備が必要になりやすい書類・情報の一般的なリスト。5〜8項目程度"],
   "tips": ["採択されやすくするポイントや、よくある落とし穴。3〜5項目程度"],
-  "search_hint": "この補助金の公募要領(PDF)を探す時に検索エンジンに入れるとよいキーワード",
-  "video_search_hint": "この補助金(または同種の制度)の申請方法を解説したYouTube動画を探す時のキーワード",
-  "reference_search_hint": "申請の進め方をまとめた解説記事・ガイドを探す時のキーワード(中小企業庁やミラサポplus等の公的解説が見つかりやすいもの)"
+  "reference_links": [{"title": "記事タイトル", "url": "実在するURL"}],
+  "video_links": [{"title": "動画タイトル", "url": "実在するYouTube URL"}]
 }
 
-注意: 一般的な補助金申請の実務知識をもとにした「準備の目安」として書いてください。
-最新の公募要領・様式・締切は必ず公式サイトで確認するよう促す一文をoverviewの最後に含めてください。`;
+注意:
+- reference_links, video_linksは、実際にWeb検索で見つかったものだけを含めてください(最大2件ずつ)。見つからなければ空配列にしてください。
+- 一般的な補助金申請の実務知識をもとにした「準備の目安」として書いてください。
+- 最新の公募要領・様式・締切は必ず公式サイトで確認するよう促す一文をoverviewの最後に含めてください。`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -84,8 +90,9 @@ ${COMPANY_PROFILE}
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 2000,
+      max_tokens: 3000,
       messages: [{ role: "user", content: prompt }],
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
     }),
   });
 
