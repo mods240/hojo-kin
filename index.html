@@ -237,6 +237,24 @@
     text-decoration: none;
   }
   .resource-link:hover { background: var(--panel-hover); color: var(--text); }
+
+  .resource-link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .resource-link-item {
+    display: block;
+    padding: 8px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--accent);
+    font-size: 0.82rem;
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .resource-link-item:hover { background: var(--panel-hover); border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -287,8 +305,14 @@ function renderSupportSection(key) {
     } else if (state === "error") {
       panelHtml = `<div class="support-panel"><div class="support-loading">取得に失敗しました。もう一度お試しください。</div></div>`;
     } else if (state) {
-      const googleUrl = (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-      const youtubeUrl = (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+      const renderLinks = (links) => {
+        if (!links || links.length === 0) {
+          return `<p style="color:var(--text-dim); font-size:0.82rem;">見つかりませんでした</p>`;
+        }
+        return links.map((l) =>
+          `<a class="resource-link-item" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.title)} ↗</a>`
+        ).join("");
+      };
 
       panelHtml = `
         <div class="support-panel">
@@ -300,18 +324,10 @@ function renderSupportSection(key) {
           <ul>${(state.documents || []).map((d) => `<li>${escapeHtml(d)}</li>`).join("")}</ul>
           <h4>ポイント・注意点</h4>
           <ul>${(state.tips || []).map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
-          <h4>公募要領を探す</h4>
-          <div class="resource-links">
-            <a class="resource-link" href="${googleUrl(state.search_hint || "")}" target="_blank" rel="noopener">🔍 Googleで探す</a>
-          </div>
-          <h4>解説記事・ガイドを探す</h4>
-          <div class="resource-links">
-            <a class="resource-link" href="${googleUrl(state.reference_search_hint || "")}" target="_blank" rel="noopener">🔍 Googleで探す</a>
-          </div>
-          <h4>解説動画を探す</h4>
-          <div class="resource-links">
-            <a class="resource-link" href="${youtubeUrl(state.video_search_hint || "")}" target="_blank" rel="noopener">▶️ YouTubeで探す</a>
-          </div>
+          <h4>解説記事・ガイド</h4>
+          <div class="resource-link-list">${renderLinks(state.reference_links)}</div>
+          <h4>解説動画</h4>
+          <div class="resource-link-list">${renderLinks(state.video_links)}</div>
         </div>
       `;
     }
