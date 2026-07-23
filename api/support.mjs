@@ -33,6 +33,20 @@ const COMPANY_PROFILE = `
 従業員規模: 中小企業
 `;
 
+async function fetchApplyUrl(subsidyId) {
+  try {
+    const res = await fetch(`https://api.jgrants-portal.go.jp/exp/v2/public/subsidies/id/${subsidyId}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const detail = data.result?.[0];
+    return detail?.front_subsidy_detail_page_url || null;
+  } catch {
+    return null;
+  }
+}
+
 async function generateSupport(subsidy) {
   const prompt = `以下の補助金について、中小企業の担当者(自分でも申請作業を行う想定)向けに、
 申請準備をサポートする情報をまとめてください。
@@ -53,7 +67,9 @@ ${COMPANY_PROFILE}
   "steps": ["申請の大まかな流れを順番に、5〜8ステップ程度。各項目は40文字程度"],
   "documents": ["準備が必要になりやすい書類・情報の一般的なリスト。5〜8項目程度"],
   "tips": ["採択されやすくするポイントや、よくある落とし穴。3〜5項目程度"],
-  "search_hint": "この補助金の公募要領(PDF)を探す時に検索エンジンに入れるとよいキーワード"
+  "search_hint": "この補助金の公募要領(PDF)を探す時に検索エンジンに入れるとよいキーワード",
+  "video_search_hint": "この補助金(または同種の制度)の申請方法を解説したYouTube動画を探す時のキーワード",
+  "reference_search_hint": "申請の進め方をまとめた解説記事・ガイドを探す時のキーワード(中小企業庁やミラサポplus等の公的解説が見つかりやすいもの)"
 }
 
 注意: 一般的な補助金申請の実務知識をもとにした「準備の目安」として書いてください。
@@ -114,7 +130,12 @@ export default async function handler(req, res) {
     const subsidy = subsidySnap.val();
 
     const support = await generateSupport(subsidy);
-    const result = { ...support, generated_at: new Date().toISOString() };
+    const applyUrl = await fetchApplyUrl(subsidy.id);
+    const result = {
+      ...support,
+      apply_url: applyUrl,
+      generated_at: new Date().toISOString(),
+    };
 
     await set(ref(db, `hojokin/support/${key}`), result);
 
